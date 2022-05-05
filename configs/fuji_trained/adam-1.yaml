@@ -1,0 +1,26 @@
+# path to dataset
+data_dir: "data/fuji"
+
+# out dir and unique name for logging purposes
+out_dir: "results_fuji/"
+unique_name: "maskrcnn-adam-1"
+
+# dataloaders params
+batch_size: 2
+num_workers: 2
+
+# train params
+model_name: "MaskRCNN_resnet50_fpn"
+device: "cuda:1"
+epochs: 18
+scheduler: "None"
+
+# augmentations
+augs:
+  - "RandomHorizontalFlip"
+
+# optimizer
+# momentum=0.9 for SGD by default
+optimizer: "Adam"
+lr: 0.001
+weight_decay: 0.0001

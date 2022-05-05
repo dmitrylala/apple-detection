@@ -1,0 +1,28 @@
+# path to fuji apples dataset
+data_dir: "fuji"
+
+# out dir and unique name for logging purposes
+out_dir: "results_fuji/"
+unique_name: "maskrcnn-base"
+
+# dataloaders params
+batch_size: 2
+num_workers: 2
+
+# train params
+
+model_name: "MaskRCNN_resnet50_fpn"
+device: "cuda:1"
+epochs: 18
+
+scheduler: "None"
+milestones:
+  - 18
+sch_gamma: 0.1
+patience: None
+
+# optimizer
+# momentum=0.9 for SGD by default
+optimizer: "SGD"
+lr: 0.001
+weight_decay: 0.0001
