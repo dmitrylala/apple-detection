@@ -1,11 +1,11 @@
 import argparse
 
 from Trainer import Trainer
-from utils import get_train_config
+from utils import TrainConfig
 
 
 def train(cfg_path: str):
-    cfg = get_train_config(cfg_path)
+    cfg = TrainConfig(cfg_path)
     trainer = Trainer(cfg)
     trainer.train()
 
