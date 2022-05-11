@@ -263,3 +263,7 @@ archive/
 data/
 pics/
 references/
+src/compare.py
+src/main.py
+src/show_preds.py
+src/show_preds_stavsad.py.py
