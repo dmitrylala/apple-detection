@@ -21,6 +21,9 @@ milestones:
 sch_gamma: 0.1
 patience: None
 
+augs:
+  - "RandomHorizontalFlip"
+
 # optimizer
 # momentum=0.9 for SGD by default
 optimizer: "Adam"
