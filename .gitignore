@@ -269,4 +269,3 @@ configs/compare.yaml
 
 src/main.py
 src/show_preds.py
-src/show_preds_stavsad.py.py
