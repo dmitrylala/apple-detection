@@ -5,20 +5,13 @@ import os
 import pydoc
 import time
 import zlib
-from collections import defaultdict, deque, namedtuple
-from typing import List
+from collections import defaultdict, deque
 
 import cv2
 import numpy as np
 import torch
 import torch.distributed as dist
-import yaml
 from PIL import Image
-
-TRAIN_CONFIG_FIELDS = [
-    "data_dir", "out_dir", "unique_name", "batch_size", "num_workers",
-    "model_name", "device", "epochs", "scheduler", "optimizer", "lr", "weight_decay"
-]
 
 
 class SmoothedValue:
@@ -284,24 +277,6 @@ def init_distributed_mode(args):
     )
     torch.distributed.barrier()
     setup_for_distributed(args.rank == 0)
-
-
-def read_config(cfg_path: str):
-    with open(cfg_path) as f:
-        cfg_dict = yaml.load(f, yaml.SafeLoader)
-    return cfg_dict
-
-
-def validate_config(cfg_dict, fields: List[str]):
-    for field in fields:
-        if field not in cfg_dict:
-            raise ValueError(f"Missing field: {field}")
-
-
-def get_train_config(cfg_path: str):
-    cfg_dict = read_config(cfg_path)
-    validate_config(cfg_dict, TRAIN_CONFIG_FIELDS)
-    return namedtuple("TrainConfig", cfg_dict.keys())(**cfg_dict)
 
 
 def object_from_dict(d, parent=None, **default_kwargs):
