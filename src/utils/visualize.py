@@ -34,6 +34,10 @@ def draw_predicts(
     apples_visualization = []
 
     for img, src_target in apple_data:
+        if not src_target:
+            apples_visualization.append((255 * img).to(torch.uint8))
+            continue
+
         target = {key: val.clone() for key, val in src_target.items()}
         if 'scores' in target:
             indices = target['scores'] > confidence_threshold
