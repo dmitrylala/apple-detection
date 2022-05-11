@@ -6,12 +6,12 @@ from torch.utils.data import DataLoader
 
 from Trainer import Trainer
 from datasets import StavsadApples
-from utils import collate_fn, get_train_config
+from utils import collate_fn, EvaluateConfig
 from utils.engine import evaluate
 
 
 def evaluate_metrics(cfg_path: str):
-    cfg = get_train_config(cfg_path)
+    cfg = EvaluateConfig(cfg_path)
     device = torch.device(cfg.device)
     model = Trainer.get_model(cfg.model_name, pretrained=False).to(device)
     model.load_state_dict(torch.load(cfg.weights_path, map_location=device))
