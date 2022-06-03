@@ -263,6 +263,7 @@ archive/
 data/
 pics/
 references/
+coursework/
 
 src/compare.py
 configs/compare.yaml
