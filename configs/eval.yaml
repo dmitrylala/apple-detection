@@ -1,26 +1,11 @@
 # for metrics evaluation
 
 model_name: "MaskRCNN_resnet50_fpn"
-device: "cuda:0"
-weights_path: "results_fuji/MaskRCNN_resnet50_fpn/weights/maskrcnn-base.pth"
-data_dir: "data/stavsad/"
+device: "cpu"
+weights_path: "results_fuji/MaskRCNN_resnet50_fpn/weights/maskrcnn-adam-5.pth"
+data_dir: "data/fuji/"
 mode: "all_cut_patches"  # only for stavsad dataset
-df_path: "evaluation_results/stavsad_all_cut_base.csv"
+dataframe_path: "evaluation_results/fuji_test.csv"
 batch_size: 2
 num_workers: 2
-
-# for visualization
-
-confidence_threshold: 0.5
-
-pics_paths:
-  - "data/fuji/val/images/_MG_7954_09.jpg"
-  - "data/fuji/val/images/_MG_8971_23.jpg"
-  - "data/fuji/val/images/_MG_3168_08.jpg"
-  - "data/fuji/val/images/_MG_3168_03.jpg"
-  - "data/fuji/val/images/_MG_8993_19.jpg"
-crops: 10
-
-out_dir: "pics/"
-grid: False
 

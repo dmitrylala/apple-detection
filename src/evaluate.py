@@ -5,7 +5,6 @@ import torch
 from torch.utils.data import DataLoader
 
 from Trainer import Trainer
-from datasets import StavsadApples
 from utils import collate_fn, EvaluateConfig
 from utils.engine import evaluate
 
@@ -17,9 +16,9 @@ def evaluate_metrics(cfg_path: str):
     model.load_state_dict(torch.load(cfg.weights_path, map_location=device))
     model.eval()
 
-    ds = StavsadApples(cfg.data_dir, cfg.mode)
+    _, ds_val = Trainer.get_datasets(cfg.data_dir)
     dl = DataLoader(
-        ds,
+        ds_val,
         batch_size=cfg.batch_size,
         num_workers=cfg.num_workers,
         shuffle=False,
@@ -46,7 +45,7 @@ def evaluate_metrics(cfg_path: str):
         for i, name in zip(indices, metric_names):
             results[f"{iou_type}/{name}"] = [coco_eval.stats[i]]
 
-    pd.DataFrame.from_dict(data=results).to_csv(cfg.df_path)
+    pd.DataFrame.from_dict(data=results).to_csv(cfg.dataframe_path)
 
 
 if __name__ == '__main__':

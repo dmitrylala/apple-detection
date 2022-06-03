@@ -169,7 +169,7 @@ class Trainer:
         return transforms
 
     @staticmethod
-    def get_datasets(data_dir, augs):
+    def get_datasets(data_dir, augs=None):
         print(f"Loading {data_dir} dataset")
 
         if 'fuji' in data_dir:
