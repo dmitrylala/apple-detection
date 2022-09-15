@@ -19,7 +19,7 @@ IMG_EXT = '.jpg'
 MASK_EXT = '.json'
 
 
-def process(image_name, image, masks, image_folder, masks_folder, strides, n_patches, data):
+def process(image_name, image, masks, image_folder, masks_folder, strides, n_patches):
     image_patches = patchify(image.unsqueeze(0), KERNEL_SIZE, strides)
     
     for j, img_patch in enumerate(image_patches):
