@@ -1,10 +1,10 @@
 import argparse
+import tqdm
 import json
 import os
 
 import torch
 from torchvision.transforms.functional import to_pil_image
-from alive_progress import alive_it
 
 from src.datasets import StavsadApples, FUJI_IMSIZE, STAVSAD_MODES, STAVSAD_CUT
 from src.utils.generate import get_masks_info, get_n_patches, get_strides
@@ -42,7 +42,7 @@ def main(root_ds: str, src_mode: str):
     data_info = {}
     json_path = os.path.join(root, mode + '.json')
 
-    for i, (image, target) in alive_it(enumerate(ds)):
+    for i, (image, target) in tqdm.tqdm(enumerate(ds), total=len(ds)):
         image_name = ds.get_img_name(i)
         masks = target['masks']
 
