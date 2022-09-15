@@ -3,7 +3,6 @@ import asyncio
 import json
 import os
 from aiomultiprocess import Pool
-import aiofiles
 
 import torch
 from torchvision.transforms.functional import to_pil_image
@@ -48,8 +47,8 @@ async def process(image_name, image, masks, image_folder, masks_folder, strides,
         patch_info['global_offset'] = [(j % n_patches[1]) * strides[1], (j // n_patches[1]) * strides[0]]
         patch_json_path = os.path.join(masks_folder, mask_json_name)
 
-        async with aiofiles.open(patch_json_path, 'w') as f:
-            f.write(json.dumps(patch_info))
+        with open(patch_json_path, 'w') as f:
+            json.dump(patch_info, f)
 
         data_info_part[img_name] = mask_json_name 
 
