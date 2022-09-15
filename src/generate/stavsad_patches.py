@@ -19,24 +19,26 @@ IMG_EXT = '.jpg'
 MASK_EXT = '.json'
 
 
-def process(image_name, image, masks, image_folder, masks_folder, strides, n_patches):
-    # convert image and masks to batch with size 1
-    image_b = image.unsqueeze(0)
-    masks_b = masks.unsqueeze(0)
-
-    # dividing into patches
-    image_patches = patchify(image_b, KERNEL_SIZE, strides)
-    masks_patches = patchify(masks_b, KERNEL_SIZE, strides)
-
-    data_info_part = {}
-    for j, (img_patch, masks_patch) in enumerate(zip(image_patches, masks_patches)):
+def process(image_name, image, masks, image_folder, masks_folder, strides, n_patches, data):
+    image_patches = patchify(image.unsqueeze(0), KERNEL_SIZE, strides)
+    
+    for j, img_patch in enumerate(image_patches):
         patch_name = image_name + f'_{j}'
         img_name = patch_name + IMG_EXT
-        mask_json_name = patch_name + MASK_EXT
 
         # save image patch
         patch_path = os.path.join(image_folder, img_name)
         to_pil_image(img_patch).save(patch_path)
+    
+    del image_patches
+
+    masks_patches = patchify(masks.unsqueeze(0), KERNEL_SIZE, strides)
+
+    data_info_part = {}
+    for j, masks_patch in enumerate(masks_patches):
+        patch_name = image_name + f'_{j}'
+        img_name = patch_name + IMG_EXT
+        mask_json_name = patch_name + MASK_EXT
 
         # get and save nonzero masks patches
         nonzero_masks = masks_patch[torch.sum(masks_patch, dim=(1, 2)) != 0, :, :].numpy()
@@ -49,6 +51,8 @@ def process(image_name, image, masks, image_folder, masks_folder, strides, n_pat
             json.dump(patch_info, f)
 
         data_info_part[img_name] = mask_json_name 
+    
+    del masks_patches
 
     return data_info_part
 
