@@ -29,7 +29,7 @@ def process(image_name, image, masks, image_folder, masks_folder, strides, n_pat
     masks_patches = patchify(masks_b, KERNEL_SIZE, strides)
 
     data_info_part = {}
-    with alive_bar(len(image_patches), title=f"Image {image_name} patches") as bar:
+    with alive_bar(len(image_patches), title=f"Image {image_name}") as bar:
         for j, (img_patch, masks_patch) in enumerate(zip(image_patches, masks_patches)):
             patch_name = image_name + f'_{j}'
             img_name = patch_name + IMG_EXT
