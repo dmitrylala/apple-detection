@@ -1,10 +1,12 @@
 import argparse
 import json
 import os
+import multiprocessing as mp
+from multiprocessing import Pool
 
 import torch
 from torchvision.transforms.functional import to_pil_image
-from tqdm import tqdm
+from alive_progress import alive_bar
 
 from src.datasets import StavsadApples, FUJI_IMSIZE, STAVSAD_MODES, STAVSAD_CUT
 from src.utils.generate import get_masks_info, get_n_patches, get_strides
@@ -17,6 +19,43 @@ MIN_OVERLAPPING = {
 }
 IMG_EXT = '.jpg'
 MASK_EXT = '.json'
+
+
+def process(
+    image_name, image, masks, data_info,
+    image_folder, masks_folder,
+    strides, n_patches
+):
+    # convert image and masks to batch with size 1
+    image_b = image.unsqueeze(0)
+    masks_b = masks.unsqueeze(0)
+
+    # dividing into patches
+    image_patches = patchify(image_b, KERNEL_SIZE, strides)
+    masks_patches = patchify(masks_b, KERNEL_SIZE, strides)
+
+    for j, (img_patch, masks_patch) in enumerate(zip(image_patches, masks_patches)):
+        patch_name = image_name + f'_{j}'
+        img_name = patch_name + IMG_EXT
+        mask_json_name = patch_name + MASK_EXT
+
+        # save image patch
+        patch_path = os.path.join(image_folder, img_name)
+        to_pil_image(img_patch).save(patch_path)
+
+        # get and save nonzero masks patches
+        nonzero_masks = masks_patch[torch.sum(masks_patch, dim=(1, 2)) != 0, :, :].numpy()
+
+        patch_info = get_masks_info(nonzero_masks)
+        patch_info['global_offset'] = [(j % n_patches[1]) * strides[1], (j // n_patches[1]) * strides[0]]
+        patch_json_path = os.path.join(masks_folder, mask_json_name)
+
+        with open(patch_json_path, 'w') as f:
+            json.dump(patch_info, f)
+
+        data_info[img_name] = mask_json_name
+    
+    return image_name
 
 
 def main(root_ds: str, src_mode: str):
@@ -42,37 +81,18 @@ def main(root_ds: str, src_mode: str):
     data_info = {}
     json_path = os.path.join(root, mode + '.json')
 
-    for i, (image, target) in tqdm(enumerate(ds)):
-        image_name = ds.get_img_name(i)
-        masks = target['masks']
+    with Pool(2) as pool, alive_bar(len(ds), title="Images processed") as bar:
+        def cback(image_name, pbar=bar):
+            print(f"Finished {image_name}")
+            pbar()
 
-        # convert image and masks to batch with size 1
-        image_b = image.unsqueeze(0)
-        masks_b = masks.unsqueeze(0)
+        result = pool.starmap_async(process,
+            [(ds.get_img_name(i), image, target['masks'], data_info, image_folder, masks_folder, strides, n_patches)
+            for i, (image, target) in enumerate(ds)
+        ], callback=cback)
+        print(result.get())
 
-        # dividing into patches
-        image_patches = patchify(image_b, KERNEL_SIZE, strides)
-        masks_patches = patchify(masks_b, KERNEL_SIZE, strides)
-
-        for j, (img_patch, masks_patch) in tqdm(enumerate(zip(image_patches, masks_patches))):
-            patch_name = image_name + f'_{j}'
-            img_name = patch_name + IMG_EXT
-            mask_json_name = patch_name + MASK_EXT
-
-            # save image patch
-            patch_path = os.path.join(image_folder, img_name)
-            to_pil_image(img_patch).save(patch_path)
-
-            # get and save nonzero masks patches
-            nonzero_masks = masks_patch[torch.sum(masks_patch, dim=(1, 2)) != 0, :, :].numpy()
-
-            patch_info = get_masks_info(nonzero_masks)
-            patch_info['global_offset'] = [(j % n_patches[1]) * strides[1], (j // n_patches[1]) * strides[0]]
-            patch_json_path = os.path.join(masks_folder, mask_json_name)
-            with open(patch_json_path, 'w') as f:
-                json.dump(patch_info, f)
-
-            data_info[img_name] = mask_json_name
+        # await process(image_name, image, masks, data_info, image_folder, masks_folder, strides, n_patches)
 
     with open(json_path, 'w') as f:
         json.dump(data_info, f)
