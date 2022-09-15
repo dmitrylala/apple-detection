@@ -2,13 +2,12 @@ import argparse
 import asyncio
 import json
 import os
-import multiprocessing as mp
-from multiprocessing import Pool
+from aiomultiprocess import Pool
 import aiofiles
 
 import torch
 from torchvision.transforms.functional import to_pil_image
-from alive_progress import alive_bar
+from alive_progress import alive_bar, alive_it
 
 from src.datasets import StavsadApples, FUJI_IMSIZE, STAVSAD_MODES, STAVSAD_CUT
 from src.utils.generate import get_masks_info, get_n_patches, get_strides
@@ -23,11 +22,7 @@ IMG_EXT = '.jpg'
 MASK_EXT = '.json'
 
 
-async def process(
-    image_name, image, masks, data_info,
-    image_folder, masks_folder,
-    strides, n_patches
-):
+async def process(image_name, image, masks, image_folder, masks_folder, strides, n_patches):
     # convert image and masks to batch with size 1
     image_b = image.unsqueeze(0)
     masks_b = masks.unsqueeze(0)
@@ -36,6 +31,7 @@ async def process(
     image_patches = patchify(image_b, KERNEL_SIZE, strides)
     masks_patches = patchify(masks_b, KERNEL_SIZE, strides)
 
+    data_info_part = {}
     for j, (img_patch, masks_patch) in enumerate(zip(image_patches, masks_patches)):
         patch_name = image_name + f'_{j}'
         img_name = patch_name + IMG_EXT
@@ -55,12 +51,13 @@ async def process(
         async with aiofiles.open(patch_json_path, 'w') as f:
             f.write(json.dumps(patch_info))
 
-        data_info[img_name] = mask_json_name
-    
-    return image_name
+        data_info_part[img_name] = mask_json_name
+        print(patch_name)
+
+    return data_info_part
 
 
-async def main(root_ds: str, src_mode: str):
+async def main(n_jobs: int, root_ds: str, src_mode: str):
     if src_mode not in STAVSAD_MODES + STAVSAD_CUT:
         raise ValueError(f"Bad mode: {src_mode}")
 
@@ -83,18 +80,13 @@ async def main(root_ds: str, src_mode: str):
     data_info = {}
     json_path = os.path.join(root, mode + '.json')
 
-    with Pool(2) as pool, alive_bar(len(ds), title="Images processed") as bar:
-        def cback(image_name, pbar=bar):
-            print(f"Finished {image_name}")
-            pbar()
-
-        result = pool.starmap_async(await process,
-            [(ds.get_img_name(i), image, target['masks'], data_info, image_folder, masks_folder, strides, n_patches)
-            for i, (image, target) in enumerate(ds)
-        ], callback=cback)
-        print(result.get())
-
-        # await process(image_name, image, masks, data_info, image_folder, masks_folder, strides, n_patches)
+    inputs = (
+        (ds.get_img_name(i), image, target['masks'], image_folder, masks_folder, strides, n_patches)
+        for i, (image, target) in enumerate(ds)
+    )
+    async with Pool(processes=n_jobs) as pool:
+        async for data_info_part in pool.starmap(process, inputs):
+            data_info.update(data_info_part)
 
     with open(json_path, 'w') as f:
         json.dump(data_info, f)
@@ -102,7 +94,8 @@ async def main(root_ds: str, src_mode: str):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Get patches from stavsad dataset")
-    parser.add_argument('root_ds', help="Path to 'stavsad' directory")
-    parser.add_argument('src_mode', help="'train', 'train_cut', 'val', 'val_cut', 'all' or 'all_cut'")
+    parser.add_argument('-n_jobs', type=int, help="Number of processes")
+    parser.add_argument('root_ds', type=str, help="Path to 'stavsad' directory")
+    parser.add_argument('-m', dest='src_mode', type=str, help="'train', 'train_cut', 'val', 'val_cut', 'all' or 'all_cut'")
     args = parser.parse_args()
     asyncio.run(main(**vars(args)))
