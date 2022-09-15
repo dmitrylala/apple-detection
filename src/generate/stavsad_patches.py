@@ -7,7 +7,7 @@ import aiofiles
 
 import torch
 from torchvision.transforms.functional import to_pil_image
-from alive_progress import alive_it
+from alive_progress import alive_bar, alive_it
 
 from src.datasets import StavsadApples, FUJI_IMSIZE, STAVSAD_MODES, STAVSAD_CUT
 from src.utils.generate import get_masks_info, get_n_patches, get_strides
@@ -83,9 +83,11 @@ async def main(n_jobs: int, root_ds: str, src_mode: str):
         (ds.get_img_name(i), image, target['masks'], image_folder, masks_folder, strides, n_patches)
         for i, (image, target) in enumerate(ds)
     )
-    async with Pool(processes=n_jobs) as pool:
-        async for data_info_part in alive_it(pool.starmap(process, inputs), total=len(ds)):
-            data_info.update(data_info_part)
+    with alive_bar(len(ds), title="Images processed") as bar:
+        async with Pool(processes=n_jobs) as pool:
+            async for data_info_part in pool.starmap(process, inputs):
+                data_info.update(data_info_part)
+                bar()
 
     with open(json_path, 'w') as f:
         json.dump(data_info, f)
