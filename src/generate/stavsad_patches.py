@@ -76,13 +76,11 @@ def main(root_ds: str, src_mode: str):
     data_info = {}
     json_path = os.path.join(root, mode + '.json')
 
-    args = (
-        (ds.get_img_name(i), image, target['masks'], image_folder, masks_folder, strides, n_patches)
-        for i, (image, target) in enumerate(ds)
-    )
     with alive_bar(len(ds), title="Images processed") as bar:
-        for inputs in args:
-            data_info_part = process(*inputs)
+        for i, (image, target) in enumerate(ds):
+            img_name = ds.get_img_name(i)
+            masks = target['masks']
+            data_info_part = process(img_name, image, masks, image_folder, masks_folder, strides, n_patches)
             data_info.update(data_info_part) 
             bar()
 
