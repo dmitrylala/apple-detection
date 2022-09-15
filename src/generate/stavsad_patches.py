@@ -29,28 +29,26 @@ def process(image_name, image, masks, image_folder, masks_folder, strides, n_pat
     masks_patches = patchify(masks_b, KERNEL_SIZE, strides)
 
     data_info_part = {}
-    with alive_bar(len(image_patches), title=f"Image {image_name}") as bar:
-        for j, (img_patch, masks_patch) in enumerate(zip(image_patches, masks_patches)):
-            patch_name = image_name + f'_{j}'
-            img_name = patch_name + IMG_EXT
-            mask_json_name = patch_name + MASK_EXT
+    for j, (img_patch, masks_patch) in enumerate(zip(image_patches, masks_patches)):
+        patch_name = image_name + f'_{j}'
+        img_name = patch_name + IMG_EXT
+        mask_json_name = patch_name + MASK_EXT
 
-            # save image patch
-            patch_path = os.path.join(image_folder, img_name)
-            to_pil_image(img_patch).save(patch_path)
+        # save image patch
+        patch_path = os.path.join(image_folder, img_name)
+        to_pil_image(img_patch).save(patch_path)
 
-            # get and save nonzero masks patches
-            nonzero_masks = masks_patch[torch.sum(masks_patch, dim=(1, 2)) != 0, :, :].numpy()
+        # get and save nonzero masks patches
+        nonzero_masks = masks_patch[torch.sum(masks_patch, dim=(1, 2)) != 0, :, :].numpy()
 
-            patch_info = get_masks_info(nonzero_masks)
-            patch_info['global_offset'] = [(j % n_patches[1]) * strides[1], (j // n_patches[1]) * strides[0]]
-            patch_json_path = os.path.join(masks_folder, mask_json_name)
+        patch_info = get_masks_info(nonzero_masks)
+        patch_info['global_offset'] = [(j % n_patches[1]) * strides[1], (j // n_patches[1]) * strides[0]]
+        patch_json_path = os.path.join(masks_folder, mask_json_name)
 
-            with open(patch_json_path, 'w') as f:
-                json.dump(patch_info, f)
+        with open(patch_json_path, 'w') as f:
+            json.dump(patch_info, f)
 
-            data_info_part[img_name] = mask_json_name 
-            bar()
+        data_info_part[img_name] = mask_json_name 
 
     return data_info_part
 
@@ -82,9 +80,11 @@ def main(root_ds: str, src_mode: str):
         (ds.get_img_name(i), image, target['masks'], image_folder, masks_folder, strides, n_patches)
         for i, (image, target) in enumerate(ds)
     )
-    for inputs in args:
-       data_info_part = process(*inputs)
-       data_info.update(data_info_part) 
+    with alive_bar(len(ds), title="Images processed") as bar:
+        for inputs in args:
+            data_info_part = process(*inputs)
+            data_info.update(data_info_part) 
+            bar()
 
     with open(json_path, 'w') as f:
         json.dump(data_info, f)
