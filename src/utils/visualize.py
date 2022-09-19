@@ -28,6 +28,7 @@ def draw_predicts(
         proba_threshold=0.5,
         confidence_threshold=0.5,
         bbox_width=4,
+        mask_color=None,
         bbox_color="red",
         mask_alpha=0.7
 ):
@@ -50,7 +51,7 @@ def draw_predicts(
         bool_masks = bool_masks.squeeze(1)
 
         if torch.any(bool_masks):
-            res = draw_segmentation_masks(res, masks=bool_masks, alpha=mask_alpha)
+            res = draw_segmentation_masks(res, masks=bool_masks, alpha=mask_alpha, colors=mask_color)
             if 'boxes' in target:
                 res = draw_bounding_boxes(res, target["boxes"], colors=bbox_color, width=bbox_width)
 
