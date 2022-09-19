@@ -1,8 +1,8 @@
 albumentations~=1.1.0
 matplotlib~=3.5.2
-numpy~=1.22.3
+numpy
 opencv_python_headless~=4.5.5.64
-pandas~=1.4.2
+pandas
 Pillow~=9.1.0
 pycocotools~=2.0.4
 PyYAML~=6.0
