@@ -51,7 +51,8 @@ def draw_predicts(
 
         if torch.any(bool_masks):
             res = draw_segmentation_masks(res, masks=bool_masks, alpha=mask_alpha)
-            res = draw_bounding_boxes(res, target["boxes"], colors=bbox_color, width=bbox_width)
+            if 'boxes' in target:
+                res = draw_bounding_boxes(res, target["boxes"], colors=bbox_color, width=bbox_width)
 
         apples_visualization.append(res)
 
