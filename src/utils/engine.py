@@ -116,6 +116,35 @@ def evaluate(model, data_loader, device):
     return coco_evaluator
 
 
+def evaluate_ds(ds_gt, ds_pred):
+    coco = get_coco_api_from_dataset(ds_gt)
+    iou_types = ["bbox", "segm"]
+    coco_evaluator = CocoEvaluator(coco, iou_types)
+
+    metric_logger = MetricLogger(delimiter="  ")
+
+    for (_, gt), (_, preds) in metric_logger.log_every(list(zip(ds_gt, ds_pred)), 2, "Result:"):
+        preds["scores"] = torch.Tensor([1.0] * len(preds["masks"]))
+        preds["masks"] = preds["masks"].unsqueeze(1)
+
+        res = {gt["image_id"].item(): preds}
+
+        evaluator_time = time.time()
+        coco_evaluator.update(res)
+        evaluator_time = time.time() - evaluator_time
+        metric_logger.update( evaluator_time=evaluator_time)
+
+    # gather the stats from all processes
+    metric_logger.synchronize_between_processes()
+    print("Averaged stats:", metric_logger)
+    coco_evaluator.synchronize_between_processes()
+
+    # accumulate predictions from all images
+    coco_evaluator.accumulate()
+    coco_evaluator.summarize()
+    return coco_evaluator
+
+
 def evaluate_confidence(model, val_dl, predictions, confidence):
     coco = get_coco_api_from_dataset(val_dl.dataset)
     iou_types = _get_iou_types(model)
